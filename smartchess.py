@@ -3,6 +3,7 @@ import gpiozero
 import time
 import copy
 import pyserial
+from collections import Counter
 
 #-----------------pin assignment------------------
 
@@ -119,6 +120,7 @@ def main():
     change_list.append(crnt)
     start_loc = -1 #piece start and end locations
     end_loc = -1
+    num_pieces = 32
     
     while(True): # run indefinatly
         crnt = poll_board() #get board state
@@ -127,25 +129,32 @@ def main():
             change_list.append(crnt)
             end_turn = False
             count = 0
+            num_pieces = crnt.Counter()[True]
         if(crnt == change_list[count]): # no change so keep moving
             pass
         else:# found change, send piece and location to arduino
             count+=1
             change_loc = find_dif(change_list[count], crnt)
-            f_pieve = find_piece(change_loc)
+            f_piece = find_piece(change_loc)
             #send to arduino, fpieve, change_loc
             change_list.append(crnt)
             
             if(count == 1):
                 start_loc = convert_loc(change_loc)
             elif(count ==2):
-                end_loc = convert_loc(change_loc)
+                if(change_list[count] != change_list[0]):
+                    end_loc = convert_loc(change_loc)
+                else:
+                    count = 0
+                    change_list = [change_list[0]]                    
             else:#third change, check if put piece back or made move
                 if(change_list[count] != change_list[0]):
                     #check if legal move
                     if(chess.Move.from_uci(start_loc+end_loc) in board.legal_moves):
                         move = chess.Move.from_uci(start_loc+end_loc)
                         board.push(move)
+                    elif():
+                        
                     else:
                         print("not legal move")
                         #alert player
@@ -154,6 +163,9 @@ def main():
                 else:#put piece back
                     count = 0
                     change_list = [change_list[0]]
+        
+        if(board.is_checkmate()):
+            print("checkmate")
                 
                 
             
