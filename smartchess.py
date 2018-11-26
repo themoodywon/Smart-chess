@@ -78,18 +78,38 @@ def find_dif(o_state,n_state):
         print("\n multiple changes detected between cycles")
         return dif
     
+# dertermind if char is number 
+def is_number(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+    
 def find_piece(loc):
     if(loc > 63 or loc < 0):
         print("range error")
         return -1
     b = board.board_fen()
-    while(true):#-----------------------here
-        ind = b.find('/')
+    i=0
+    while(i<loc):
+        if(is_number(b[i])):
+            i+=b[i]
+        else:
+            i+=1
+    return b[i]
         
-    
+
 # number index to letter index
 ntl = ['a','b','c','d','e','f','g','h' ]
 
+# convert int to board coordinate
+def convert_loc(num):
+    row_num = math.floor(num/8)
+    row = ntl[row_num]
+    col = num-row_num
+    return [row,col]
 
 def main():
     board = chess.Board() # for chess api
@@ -97,17 +117,44 @@ def main():
     change_list = [] #vector of matrixs to keep track of changes
     count = 0 # number of changes
     change_list.append(crnt)
-    while(True):
+    start_loc = -1 #piece start and end locations
+    end_loc = -1
+    
+    while(True): # run indefinatly
         crnt = poll_board() #get board state
-        if(end_turn): #check if turn ended
+        if(end_turn): #check if turn ended, if true reset to begining with crnt state
             change_list = []
             change_list.append(crnt)
             end_turn = False
             count = 0
-        if(crnt == change_list[count]):
+        if(crnt == change_list[count]): # no change so keep moving
             pass
-        else:
-            change = find_dif(change_list[count], crnt)
+        else:# found change, send piece and location to arduino
+            count+=1
+            change_loc = find_dif(change_list[count], crnt)
+            f_pieve = find_piece(change_loc)
+            #send to arduino, fpieve, change_loc
+            change_list.append(crnt)
             
+            if(count == 1):
+                start_loc = convert_loc(change_loc)
+            elif(count ==2):
+                end_loc = convert_loc(change_loc)
+            else:#third change, check if put piece back or made move
+                if(change_list[count] != change_list[0]):
+                    #check if legal move
+                    if(chess.Move.from_uci(start_loc+end_loc) in board.legal_moves):
+                        move = chess.Move.from_uci(start_loc+end_loc)
+                        board.push(move)
+                    else:
+                        print("not legal move")
+                        #alert player
+                        
+                        
+                else:#put piece back
+                    count = 0
+                    change_list = [change_list[0]]
+                
+                
             
         
