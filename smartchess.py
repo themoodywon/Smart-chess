@@ -38,7 +38,7 @@ def poll_number_set(num):
         poll_select[0].on()
         poll_select[1].on()
     elif(num == 4):
-        poll_select[2].off()  
+        poll_select[2].on()  
     elif(num == 5):
         poll_select[0].on()
         poll_select[2].on()
@@ -59,7 +59,7 @@ def poll_board():
     for i in range(0,7):
         poll_number_set(i)
         for j in range(0,7):
-            read_list.append(read_pins[j])
+            read_list.append(read_pins[j]) #
         
     return read_list
 
@@ -89,6 +89,7 @@ def is_number(s):
 
     
 #returns what type ie k, K,q, b, R
+# use board.piece_type_at(sqr) instead
 def find_piece(loc):
     if(loc > 63 or loc < 0):
         print("range error")
@@ -102,16 +103,18 @@ def find_piece(loc):
             i+=1
     return b[i]
         
+        
+        
 
 # number index to letter index
-ntl = ['a','b','c','d','e','f','g','h' ]
+ntl = ['A','B','C','D','E','F','G','H' ]
 
 # convert int to board coordinate
 def convert_loc(num):
     row_num = math.floor(num/8)
     row = ntl[row_num]
     col = num-row_num
-    return [row,col]
+    return row+col
 
 def main():
     board = chess.Board() # for chess api
@@ -138,7 +141,6 @@ def main():
                 if(chess.Move.from_uci(start_loc+end_loc) in board.legal_moves):
                     move = chess.Move.from_uci(start_loc+end_loc)
                     board.push(move)
-                elif():
                     
                 else:
                     print("not legal move")
@@ -150,8 +152,27 @@ def main():
         else:# found change, send piece and location to arduino
             count+=1
             change_loc = find_dif(change_list[count], crnt)
-            f_piece = find_piece(change_loc)
-            
+            sqr =chess.SQUARES[change_loc]
+            if(board.piece_type_at(sqr) == 1):#if piece is a pawn
+                if(chess.WHITE):
+                    shift = 8
+                else:
+                    shift = -8
+                if(board.fullmove_number == 1):
+                    attts = [change_loc+shift, change_loc+(shift*2)]
+                else:
+                    atts = [change_loc+shift]
+                    
+                if(crnt[change_loc+shift+1]):
+                    atts.append(change_loc+shift+1)
+                if(crnt[change_loc+shift-1]):
+                    atts.append(change_loc+shift-1)
+                
+            else:
+                atts = list(board.attacks(sqr))
+            amoves = [0]*64
+            for i in range(0,len(atts)):
+                amoves[atts[i]] = 1 
             #send to arduino, fpiece, change_loc
             
             change_list.append(crnt)
