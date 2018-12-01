@@ -2,19 +2,19 @@ import chess
 import gpiozero
 import time
 import copy
-import pyserial
+import serial
 from collections import Counter
 
 #-----------------pin assignment------------------
 
 #-------------------poll pins--------------
-poll_select  = [gpiozero.DigitalOutputDevice(a), gpiozero.DigitalOutputDevice(b), gpiozero.DigitalOutputDevice(c)]
+poll_select  = [gpiozero.DigitalOutputDevice(21), gpiozero.DigitalOutputDevice(20), gpiozero.DigitalOutputDevice(16)]
 
-read_pins = [gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button()]
+read_pins = [gpiozero.Button(18), gpiozero.Button(4), gpiozero.Button(17), gpiozero.Button(27), gpiozero.Button(22), gpiozero.Button(6), gpiozero.Button(13), gpiozero.Button(19),]
 
 
 # ----turn button--
-turn_button = gpiozero.Button()
+#turn_button = gpiozero.Button()
 
 #--------------------------convers int to correct poll selector pins
 end_turn = False
@@ -23,6 +23,17 @@ def next_turn():
     end_turn = True
 
 turn_button.when_pressed(next_turn())
+
+#set serial parameters
+ser = serial.Serial(
+    port='/dev/ttyUSB1',
+    baudrate=9600,
+    parity=serial.PARITY_ODD,
+    stopbits=serial.STOPBITS_TWO,
+    bytesize=serial.SEVENBITS
+)
+
+ser.isOpen()
 
 def poll_number_set(num):
     poll_select[0].off()
@@ -104,7 +115,6 @@ def find_piece(loc):
     return b[i]
         
         
-        
 
 # number index to letter index
 ntl = ['A','B','C','D','E','F','G','H' ]
@@ -158,6 +168,7 @@ def main():
                     shift = 8
                 else:
                     shift = -8
+                    
                 if(board.fullmove_number == 1):
                     attts = [change_loc+shift, change_loc+(shift*2)]
                 else:
@@ -174,13 +185,15 @@ def main():
             for i in range(0,len(atts)):
                 amoves[atts[i]] = 1 
             #send to arduino, fpiece, change_loc
+            ser.write(amoves+"\r\n")
+            
             
             change_list.append(crnt)
             
             if(count == 1): # piece picked up, mark starting location
                 start_loc = convert_loc(change_loc)
                 
-            elif(count ==2):# piece either picked up for taking, or original piece picked up or a simple move 
+            elif(count == 2):# piece either picked up for taking, or original piece picked up or a simple move 
                 if(change_list[count] != change_list[0]): # not put back either normal move or taken piece
                     end_loc = convert_loc(change_loc)
                     if(num_pieces-2 == Counter(crnt)[True]): #piece is taken
@@ -198,5 +211,7 @@ def main():
             print("checkmate")
                 
                 
-            
-        
+
+
+print(poll_board())
+print ("\nnumber of true: "+Counter(poll_board)[True])
