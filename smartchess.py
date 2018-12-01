@@ -1,16 +1,33 @@
 import chess
 import gpiozero
 import time
-import copy
 import serial
 from collections import Counter
 
 #-----------------pin assignment------------------
 
 #-------------------poll pins--------------
-poll_select  = [gpiozero.DigitalOutputDevice(21), gpiozero.DigitalOutputDevice(20), gpiozero.DigitalOutputDevice(16)]
+switch0 = gpiozero.Button(18, pull_up = False)
+switch1 = gpiozero.Button(4, pull_up = False)
+switch2 = gpiozero.Button(17, pull_up = False)
+switch3 = gpiozero.Button(27, pull_up = False)
+switch4 = gpiozero.Button(22, pull_up = False)
+switch5 = gpiozero.Button(6, pull_up = False)
+switch6 = gpiozero.Button(13, pull_up = False)
+switch7 = gpiozero.Button(19, pull_up = False)
 
-read_pins = [gpiozero.Button(18), gpiozero.Button(4), gpiozero.Button(17), gpiozero.Button(27), gpiozero.Button(22), gpiozero.Button(6), gpiozero.Button(13), gpiozero.Button(19),]
+mux0 = gpiozero.LED(21)
+mux1 = gpiozero.LED(20)
+mux2 = gpiozero.LED(16)
+
+
+poll_select = [mux0, mux1, mux2]
+
+read_pins = [switch0, switch1, switch2, switch3, switch4, switch5, switch6, switch7]
+
+#poll_select  = [gpiozero.LED(21), gpiozero.DigitalOutputDevice(20), gpiozero.DigitalOutputDevice(16)]
+
+#read_pins = [gpiozero.Button(18), gpiozero.Button(4), gpiozero.Button(17), gpiozero.Button(27), gpiozero.Button(22), gpiozero.Button(6), gpiozero.Button(13), gpiozero.Button(19),]
 
 
 # ----turn button--
@@ -22,9 +39,10 @@ end_turn = False
 def next_turn():
     end_turn = True
 
-turn_button.when_pressed(next_turn())
+#turn_button.when_pressed(next_turn())
 
 #set serial parameters
+    '''
 ser = serial.Serial(
     port='/dev/ttyUSB1',
     baudrate=9600,
@@ -34,7 +52,7 @@ ser = serial.Serial(
 )
 
 ser.isOpen()
-
+'''
 def poll_number_set(num):
     poll_select[0].off()
     poll_select[1].off()
@@ -57,6 +75,7 @@ def poll_number_set(num):
         poll_select[1].on()
         poll_select[2].on()
     elif(num == 7):
+		
         poll_select[0].on()
         poll_select[1].on()
         poll_select[2].on()
@@ -67,11 +86,11 @@ def poll_number_set(num):
 #-----------------------------get the state of the board returns 64 bool list
 def poll_board():
     read_list = []
-    for i in range(0,7):
+    for i in range(0,8):
         poll_number_set(i)
-        for j in range(0,7):
-            read_list.append(read_pins[j]) #
-        
+        for j in range(0,8):
+            read_list.append(read_pins[j].is_pressed)
+
     return read_list
 
 
@@ -79,7 +98,7 @@ def poll_board():
 def find_dif(o_state,n_state):
     dif = -1
     tmp_cnt = 0
-    for i in range(0,len(o_state)):
+    for i in range(0,len(o_state)):#maybe add one because range is stpd not inclusive
         if(o_state[i] != n_state[i]):
             dif = i
             tmp_cnt+=1
@@ -205,6 +224,7 @@ def main():
             else:#third change, check if put piece back after being taken
                 if(piece_taken == True and num_pieces-1 == Counter(crnt)[True]):
                     piece_taken == False
+        
                         
         
         if(board.is_checkmate()):
@@ -214,4 +234,4 @@ def main():
 
 
 print(poll_board())
-print ("\nnumber of true: "+Counter(poll_board)[True])
+print ("\nnumber of true: "+ str(Counter(poll_board())[True]))
