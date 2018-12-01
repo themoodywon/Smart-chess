@@ -8,13 +8,13 @@ from collections import Counter
 #-----------------pin assignment------------------
 
 #-------------------poll pins--------------
-poll_select  = [gpiozero.DigitalOutputDevice(a), gpiozero.DigitalOutputDevice(b), gpiozero.DigitalOutputDevice(c)]
+poll_select  = [gpiozero.DigitalOutputDevice(21), gpiozero.DigitalOutputDevice(20), gpiozero.DigitalOutputDevice(16)]
 
-read_pins = [gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button(), gpiozero.Button()]
+read_pins = [gpiozero.Button(18), gpiozero.Button(4), gpiozero.Button(17), gpiozero.Button(27), gpiozero.Button(22), gpiozero.Button(6), gpiozero.Button(13), gpiozero.Button(19),]
 
 
 # ----turn button--
-turn_button = gpiozero.Button()
+#turn_button = gpiozero.Button()
 
 #--------------------------convers int to correct poll selector pins
 end_turn = False
