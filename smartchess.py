@@ -3,6 +3,7 @@ import gpiozero
 import time
 import serial
 from collections import Counter
+import atexit
 
 #-----------------pin assignment------------------
 
@@ -31,17 +32,39 @@ read_pins = [switch0, switch1, switch2, switch3, switch4, switch5, switch6, swit
 
 
 # ----turn button--
-#turn_button = gpiozero.Button()
+end_turn = False
+
+turn_button = gpiozero.Button(12)
 
 #--------------------------convers int to correct poll selector pins
-end_turn = False
+
 
 def next_turn():
     end_turn = True
+    print("turn ended \n")
 
-#turn_button.when_pressed(next_turn())
+turn_button.when_pressed = next_turn
 
-ser = serial.Serial('/dev/ttyAMC0', 9600, timeout=5)
+ser = serial.Serial('/dev/ttyACM0', 9600, timeout=5)
+
+def closing():
+	print("closing serial port")
+	ser.close()
+	
+atexit.register(closing);
+
+
+#convert true false array to arduino string
+def toArduinoString(board):
+	s = ''
+	
+	for b in board:
+		if b == True:
+			s += '1'
+		else:
+			s += '0'
+	
+	return s
 
 #set serial parameters
 
@@ -136,26 +159,34 @@ def convert_loc(num):
     row = ntl[row_num]
     col = num-row_num
     return row+col
+    
 
 def main():
     board = chess.Board() # for chess api
-    crnt = [[True]*16 + [False]*32, [True]*16] #sets starting board
+    crnt = [True]*16 + [False]*32, [True]*16 #sets starting board
     change_list = [] #vector of matrixs to keep track of changes
     count = 0 # number of changes
-    change_list.append(crnt)
+    #change_list.append(crnt)
     start_loc = -1 #piece start and end locations
     end_loc = -1
     num_pieces = 32
     piece_taken = False
+    global end_turn
     
-    while(False == end_turn):# wait for end trun to calabrate board
-	    time.sleep(5000)
+    '''
+    while(False == end_turn):# wait for end turn to calabrate board
+	    time.sleep(5)
+	'''
     
     crnt = poll_board()
+    change_list.append(crnt)
+    ser.write(toArduinoString(crnt).encode())
+    print("sending to arduino")
     
     while(True): # run indefinatly
         crnt = poll_board() #get board state
         if(end_turn): #check if turn ended, if true reset to begining with crnt state
+            print("moving to next turn\n")
             change_list = []
             change_list.append(crnt)
             end_turn = False
@@ -177,6 +208,8 @@ def main():
             pass
         else:# found change, send piece and location to arduino
             count+=1
+            print("found change \n")
+            print(change_list)
             change_loc = find_dif(change_list[count], crnt)
             sqr =chess.SQUARES[change_loc]
             if(board.piece_type_at(sqr) == 1):#if piece is a pawn
@@ -197,11 +230,11 @@ def main():
                 
             else:
                 atts = list(board.attacks(sqr))
-            amoves = [0]*64
+            amoves = [False]*64
             for i in range(0,len(atts)):
-                amoves[atts[i]] = 1 
+                amoves[atts[i]] = True
             #send to arduino, fpiece, change_loc
-            ser.write(amoves+"\r\n")
+            ser.write(toArduinoString(amoves).encode())
             
             
             change_list.append(crnt)
@@ -230,25 +263,23 @@ def main():
                 
 
 
-def toArduinoString(board):
-	s = ''
-	for b in board:
-		if b == True:
-			s += '1'
-		else:
-			s += '0'
-			
-			
-	return s
+	
+main()
 
-
+'''
 print(poll_board())
 
 while(True):
 	
+    ser.flush()
+	
 	#print ("\nnumber of true: "+ str(poll_board()))
-    print(toArduinoString(poll_board()))
+    board_str = toArduinoString(poll_board())
 
-    board_str = '0010000001100000011000000110000011000000110000001100000011000000'
-    ser.write(board_str)
-    time.sleep(20)
+    #board_str = "0010000001100000011000000110000011000000110000001100000011000000"
+    print("about to send to arduino: " + board_str)
+    ser.write(board_str.encode())
+    print("sent to arduino")
+    time.sleep(8.5)
+
+'''
