@@ -233,5 +233,21 @@ def main():
                 
 
 
+def toArduinoString(board):
+	s = ''
+	for b in board:
+		if b == True:
+			s += '1'
+		else:
+			s += '0'
+			
+			
+	return s
+
+
 print(poll_board())
-print ("\nnumber of true: "+ str(Counter(poll_board())[True]))
+while(True):
+	
+	#print ("\nnumber of true: "+ str(poll_board()))
+	print(toArduinoString(poll_board()))
+	time.sleep(2)
