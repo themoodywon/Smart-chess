@@ -1,61 +1,8 @@
-
 int outPins[8] = {2, 3, 4, 5, 6, 7, 8, 9};
 int muxPins[3] = {12, 11, 10};
-void setup() {
-  // put your setup code here, to run once:
-
-  Serial.begin(9600);
-  for (int i = 0; i < 8; i++) {
-    pinMode(outPins[i], OUTPUT);
-  }
-  pinMode(muxPins[0], OUTPUT);
-  pinMode(muxPins[1], OUTPUT);
-  pinMode(muxPins[2], OUTPUT);
 
 
-  digitalWrite(muxPins[0], LOW);
-  digitalWrite(muxPins[1], LOW);
-  digitalWrite(muxPins[2], LOW);
-
-  for(int i = 0; i < 8; i++){
-    digitalWrite(outPins[i], HIGH);
-  }
-  //digitalWrite(outPins[4], LOW);
-  //digitalWrite(outPins[1], LOW);
-  digitalWrite(outPins[2], LOW);
-  //digitalWrite(outPins[7], LOW);
-
-
-  for(int i = 0; i<8; i++){
-  
-  /*  
-  digitalWrite(muxPins[0], LOW);
-  digitalWrite(muxPins[1], LOW);
-  digitalWrite(muxPins[2], LOW);
-  delay(1000);
-  Serial.println("col 1");
-
-
-  digitalWrite(muxPins[0], HIGH);
-  digitalWrite(muxPins[1], LOW);
-  digitalWrite(muxPins[2], LOW);
-  Serial.println("col 2");
-
-  delay(1000);
-
-  digitalWrite(muxPins[0], LOW);
-  digitalWrite(muxPins[1], HIGH);
-  digitalWrite(muxPins[2], LOW);
-  Serial.println("col 3");
-  delay(1000);
-
-  digitalWrite(muxPins[0], HIGH);
-  digitalWrite(muxPins[1], HIGH);
-  digitalWrite(muxPins[2], LOW);
-  Serial.println("col 4");
-  delay(1000);
-  */
-
+void set_mux(int i){
   if (i == 0) {
         //case 0: // S = 000
           digitalWrite(muxPins[0], LOW);
@@ -111,16 +58,61 @@ void setup() {
           digitalWrite(muxPins[2], LOW);
           Serial.println("default");
       }
+      return;
+}
 
-      delay(1000);
+void setup() {
+  // put your setup code here, to run once:
+  // put your setup code here, to run once:
 
-  
+  Serial.begin(9600);
+  for (int i = 0; i < 8; i++) {
+    pinMode(outPins[i], OUTPUT);
+  }
+  pinMode(muxPins[0], OUTPUT);
+  pinMode(muxPins[1], OUTPUT);
+  pinMode(muxPins[2], OUTPUT);
+
+
+  digitalWrite(muxPins[0], LOW);
+  digitalWrite(muxPins[1], LOW);
+  digitalWrite(muxPins[2], LOW);
+
+  for(int i = 0; i < 8; i++){
+    digitalWrite(outPins[i], HIGH);
   }
 }
+//00000011 00000011 00000011 00000111 00000011
+String board = "0010000001100000011000000110000011000000110000001100000011000000";
+
 
 void loop() {
   // put your main code here, to run repeatedly:
 
+  Serial.println(board);
+  Serial.println(board.length());
 
+  for(int i = 0; i<8; i++){
+    set_mux(i);
+    for(int j = 0; j<8; j++){
+      Serial.println("at j  = ");
+      Serial.println(board[j+(8*i)]);
+      if(board[j+(8*i)] == '1'){
+        Serial.println("in if");
+        pinMode(outPins[j], LOW);
+        pinMode(outPins[j], HIGH);
+      }
+      else{
+        pinMode(outPins[j], HIGH);
+      }
+    }
 
+    
+    delay(1000);
+     for(int i = 0; i < 8; i++){
+    digitalWrite(outPins[i], HIGH);
+  }
+
+  }
+  
 }
