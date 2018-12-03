@@ -156,6 +156,11 @@ def main():
     num_pieces = 32
     piece_taken = False
     
+    while(False == end_turn):# wait for end trun to calabrate board
+	time.sleep(5000)
+    
+    crnt = poll_board()
+    
     while(True): # run indefinatly
         crnt = poll_board() #get board state
         if(end_turn): #check if turn ended, if true reset to begining with crnt state
