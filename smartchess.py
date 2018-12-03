@@ -247,8 +247,8 @@ print(poll_board())
 while(True):
 	
 	#print ("\nnumber of true: "+ str(poll_board()))
-	print(toArduinoString(poll_board()))
-    
-    board = '0010000001100000011000000110000011000000110000001100000011000000'
-    ser.write(board)
-	time.sleep(20)
+    print(toArduinoString(poll_board()))
+
+    board_str = '0010000001100000011000000110000011000000110000001100000011000000'
+    ser.write(board_str)
+    time.sleep(20)
