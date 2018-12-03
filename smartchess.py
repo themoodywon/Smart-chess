@@ -4,6 +4,7 @@ import time
 import serial
 from collections import Counter
 import atexit
+import math
 
 #-----------------pin assignment------------------
 
@@ -157,12 +158,14 @@ ntl = ['A','B','C','D','E','F','G','H' ]
 def convert_loc(num):
     row_num = math.floor(num/8)
     row = ntl[row_num]
-    col = num-row_num
+    col = str(num-row_num)
     return row+col
     
 
 def main():
     board = chess.Board() # for chess api
+    ser.write("hello".encode())
+    time.sleep(2)
     crnt = [True]*16 + [False]*32, [True]*16 #sets starting board
     change_list = [] #vector of matrixs to keep track of changes
     count = 0 # number of changes
@@ -172,6 +175,7 @@ def main():
     num_pieces = 32
     piece_taken = False
     global end_turn
+    atts = []
     
     '''
     while(False == end_turn):# wait for end turn to calabrate board
@@ -180,8 +184,11 @@ def main():
     
     crnt = poll_board()
     change_list.append(crnt)
+    print(toArduinoString(crnt))
+    print(len(toArduinoString(crnt)))
     ser.write(toArduinoString(crnt).encode())
     print("sending to arduino")
+    time.sleep(10)
     
     while(True): # run indefinatly
         crnt = poll_board() #get board state
@@ -209,9 +216,11 @@ def main():
         else:# found change, send piece and location to arduino
             count+=1
             print("found change \n")
+            change_list.append(crnt)
             print(change_list)
-            change_loc = find_dif(change_list[count], crnt)
+            change_loc = find_dif(change_list[count-1], crnt)
             sqr =chess.SQUARES[change_loc]
+            atts = []
             if(board.piece_type_at(sqr) == 1):#if piece is a pawn
                 if(chess.WHITE):
                     shift = 8
@@ -219,9 +228,10 @@ def main():
                     shift = -8
                     
                 if(board.fullmove_number == 1):
-                    attts = [change_loc+shift, change_loc+(shift*2)]
+                    atts.append(change_loc+shift)
+                    atts.append(change_loc+(shift*2))
                 else:
-                    atts = [change_loc+shift]
+                    atts.append(change_loc+shift)
                     
                 if(crnt[change_loc+shift+1]):
                     atts.append(change_loc+shift+1)
@@ -232,6 +242,7 @@ def main():
                 atts = list(board.attacks(sqr))
             amoves = [False]*64
             for i in range(0,len(atts)):
+                print(atts)
                 amoves[atts[i]] = True
             #send to arduino, fpiece, change_loc
             ser.write(toArduinoString(amoves).encode())
@@ -281,5 +292,4 @@ while(True):
     ser.write(board_str.encode())
     print("sent to arduino")
     time.sleep(8.5)
-
 '''
