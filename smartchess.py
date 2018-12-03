@@ -41,18 +41,10 @@ def next_turn():
 
 #turn_button.when_pressed(next_turn())
 
-#set serial parameters
-    '''
-ser = serial.Serial(
-    port='/dev/ttyUSB1',
-    baudrate=9600,
-    parity=serial.PARITY_ODD,
-    stopbits=serial.STOPBITS_TWO,
-    bytesize=serial.SEVENBITS
-)
+ser = serial.Serial('/dev/ttyAMC0', 9600, timeout=5)
 
-ser.isOpen()
-'''
+#set serial parameters
+
 def poll_number_set(num):
     poll_select[0].off()
     poll_select[1].off()
@@ -157,7 +149,7 @@ def main():
     piece_taken = False
     
     while(False == end_turn):# wait for end trun to calabrate board
-	time.sleep(5000)
+	    time.sleep(5000)
     
     crnt = poll_board()
     
@@ -251,8 +243,12 @@ def toArduinoString(board):
 
 
 print(poll_board())
+
 while(True):
 	
 	#print ("\nnumber of true: "+ str(poll_board()))
 	print(toArduinoString(poll_board()))
-	time.sleep(2)
+    
+    board = '0010000001100000011000000110000011000000110000001100000011000000'
+    ser.write(board)
+	time.sleep(20)
