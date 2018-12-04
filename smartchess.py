@@ -181,13 +181,15 @@ def main():
     
     
     while(False == end_turn):# wait for end turn to calabrate board
-        time.sleep(5)
+        ser.flush()
         crnt = poll_board()
         change_list.append(crnt)
         print(toArduinoString(crnt))
         print(len(toArduinoString(crnt)))
         ser.write(toArduinoString(crnt).encode())
         print("sending to arduino")
+        print("\nnumber of pieces detected: "+str(Counter(crnt)[True]))
+        time.sleep(5)
 	
     end_turn = False
     
@@ -201,7 +203,7 @@ def main():
             count = 0
             num_pieces = Counter(crnt)[True]
             print("move string")
-            print(start_loc+end_loc)
+            print(str(start_loc+end_loc))
             if(crnt != change_list[0]):
                 #check if legal move
                 if(chess.Move.from_uci(start_loc+end_loc) in board.pseudo_legal_moves):
@@ -213,21 +215,29 @@ def main():
                         white = False
                     else:
                         white = True
-                    '''
-                    if (chess.WHITE):
-                        chess.WHITE = False
-                        chess.BLACK = True
-                    else:
-                        chess.WHITE = True
-                        chess.BLACK = False
-                    '''
-                    print("chess.WHITE after flip: " + str(chess.WHITE))
+                    change_list = []
+                    change_list.append(crnt)
                     
                 else:
                     print("not legal move")
-                    #alert player          
-            change_list = []
-            change_list.append(crnt)
+                    #alert player 
+                    ser.flush()
+
+                    while(False == end_turn):# wait for end turn to calabrate board
+                        print("illegal move detected please move pieces back to the start of turn positioning.\n")
+                        print(toArduinoString(change_list[0]))
+                        ser.write(toArduinoString(change_list[0]).encode())
+                        print("sending to arduino")
+                        time.sleep(8)
+                        break
+                
+                    end_turn = False
+                    crnt = change_list[0]
+                    change_list = []
+                    change_list.append(crnt)
+                    count = 0   
+                    print("\nstart turn\n")         
+
             
             
             
@@ -260,7 +270,7 @@ def main():
                     else:
                         shift = -8
                         
-                    if(board.fullmove_number == 1):
+                    if((change_loc >= 8 and change_loc <= 15 and white) or (change_loc >= 48 and change_loc <= 55 and white == False)):
                         atts.append(change_loc+shift)
                         atts.append(change_loc+(shift*2))
                     else:
@@ -289,12 +299,25 @@ def main():
                 else: # put piece back
                     count = 0
                     change_list = [change_list[0]]                    
-            else:#third change, check if put piece back after being taken
+            elif(count == 3):#third change, check if put piece back after being taken
                 if(piece_taken == True and num_pieces-1 == Counter(crnt)[True]):
                     piece_taken == False
-        
-                        
-        
+            else:
+                while(False == end_turn):# wait for end turn to calabrate board
+                    ser.flush()
+                    print("error detected please move pieces back to the start of turn positioning.\n")
+                    print(toArduinoString(change_list[0]))
+                    ser.write(toArduinoString(change_list[0]).encode())
+                    print("sending to arduino")
+                    time.sleep(8)
+                    break
+                
+                end_turn = False
+                crnt = change_list[0]
+                change_list = []
+                change_list.append(crnt)
+                count = 0   
+                print("\nstart turn\n")
         if(board.is_checkmate()):
             print("checkmate")
                 
