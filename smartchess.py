@@ -41,6 +41,7 @@ turn_button = gpiozero.Button(12)
 
 
 def next_turn():
+    global end_turn
     end_turn = True
     print("turn ended \n")
 
@@ -152,14 +153,14 @@ def find_piece(loc):
         
 
 # number index to letter index
-ntl = ['A','B','C','D','E','F','G','H' ]
+ntl = ['a','b','c','d','e','f','g','h' ]
 
 # convert int to board coordinate
 def convert_loc(num):
     row_num = math.floor(num/8)
-    row = ntl[row_num]
-    col = str(num-row_num)
-    return row+col
+    row = str(row_num+1)
+    col = ntl[num-(row_num*8)]
+    return col+row
     
 
 def main():
@@ -175,40 +176,63 @@ def main():
     num_pieces = 32
     piece_taken = False
     global end_turn
+    white = True
     atts = []
     
-    '''
-    while(False == end_turn):# wait for end turn to calabrate board
-	    time.sleep(5)
-	'''
     
-    crnt = poll_board()
-    change_list.append(crnt)
-    print(toArduinoString(crnt))
-    print(len(toArduinoString(crnt)))
-    ser.write(toArduinoString(crnt).encode())
-    print("sending to arduino")
-    time.sleep(10)
+    while(False == end_turn):# wait for end turn to calabrate board
+        time.sleep(5)
+        crnt = poll_board()
+        change_list.append(crnt)
+        print(toArduinoString(crnt))
+        print(len(toArduinoString(crnt)))
+        ser.write(toArduinoString(crnt).encode())
+        print("sending to arduino")
+	
+    end_turn = False
     
     while(True): # run indefinatly
+        time.sleep(1)
         crnt = poll_board() #get board state
+        
         if(end_turn): #check if turn ended, if true reset to begining with crnt state
             print("moving to next turn\n")
-            change_list = []
-            change_list.append(crnt)
             end_turn = False
             count = 0
-            num_pieces = crnt.Counter()[True]
-            
-            if(change_list[count] != change_list[0]):
+            num_pieces = Counter(crnt)[True]
+            print("move string")
+            print(start_loc+end_loc)
+            if(crnt != change_list[0]):
                 #check if legal move
-                if(chess.Move.from_uci(start_loc+end_loc) in board.legal_moves):
+                if(chess.Move.from_uci(start_loc+end_loc) in board.pseudo_legal_moves):
                     move = chess.Move.from_uci(start_loc+end_loc)
                     board.push(move)
+                    print(board)
+                    print("chess.WHITE before flip: " + str(chess.WHITE))
+                    if(white):
+                        white = False
+                    else:
+                        white = True
+                    '''
+                    if (chess.WHITE):
+                        chess.WHITE = False
+                        chess.BLACK = True
+                    else:
+                        chess.WHITE = True
+                        chess.BLACK = False
+                    '''
+                    print("chess.WHITE after flip: " + str(chess.WHITE))
                     
                 else:
                     print("not legal move")
-                    #alert player                                
+                    #alert player          
+            change_list = []
+            change_list.append(crnt)
+            
+            
+            
+            #chess.WHITE = ~chess.WHITE
+            #chess.BLACK = ~chess.BLACK
             
             
         if(crnt == change_list[count]): # no change so keep moving
@@ -216,42 +240,45 @@ def main():
         else:# found change, send piece and location to arduino
             count+=1
             print("found change \n")
-            change_list.append(crnt)
-            print(change_list)
+            #print(change_list)
             change_loc = find_dif(change_list[count-1], crnt)
+            print(change_loc)
             sqr =chess.SQUARES[change_loc]
             atts = []
-            if(board.piece_type_at(sqr) == 1):#if piece is a pawn
-                if(chess.WHITE):
-                    shift = 8
-                else:
-                    shift = -8
-                    
-                if(board.fullmove_number == 1):
-                    atts.append(change_loc+shift)
-                    atts.append(change_loc+(shift*2))
-                else:
-                    atts.append(change_loc+shift)
-                    
-                if(crnt[change_loc+shift+1]):
-                    atts.append(change_loc+shift+1)
-                if(crnt[change_loc+shift-1]):
-                    atts.append(change_loc+shift-1)
-                
-            else:
-                atts = list(board.attacks(sqr))
-            amoves = [False]*64
-            for i in range(0,len(atts)):
-                print(atts)
-                amoves[atts[i]] = True
-            #send to arduino, fpiece, change_loc
-            ser.write(toArduinoString(amoves).encode())
+           
             
             
             change_list.append(crnt)
             
             if(count == 1): # piece picked up, mark starting location
                 start_loc = convert_loc(change_loc)
+                if(board.piece_type_at(sqr) == 1):#if piece is a pawn
+                    print("is it whites turn")
+                    print(white)
+                    if(white):
+                        shift = 8
+                    else:
+                        shift = -8
+                        
+                    if(board.fullmove_number == 1):
+                        atts.append(change_loc+shift)
+                        atts.append(change_loc+(shift*2))
+                    else:
+                        atts.append(change_loc+shift)
+                        
+                    if(crnt[change_loc+shift+1]):
+                        atts.append(change_loc+shift+1)
+                    if(crnt[change_loc+shift-1]):
+                        atts.append(change_loc+shift-1)
+                    
+                else:
+                    atts = list(board.attacks(sqr))
+                amoves = [False]*64
+                for i in range(0,len(atts)):
+                    print(atts)
+                    amoves[atts[i]] = True
+                #send to arduino, fpiece, change_loc
+                ser.write(toArduinoString(amoves).encode())
                 
             elif(count == 2):# piece either picked up for taking, or original piece picked up or a simple move 
                 if(change_list[count] != change_list[0]): # not put back either normal move or taken piece
